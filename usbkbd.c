@@ -25,6 +25,13 @@
 #include <linux/usb/input.h>
 #include <linux/hid.h>
 
+#include <linux/delay.h>
+
+#include <linux/sched.h>
+#include <linux/jiffies.h>
+
+#include <linux/workqueue.h>
+
 /*
  * Version Information
  */
@@ -97,12 +104,12 @@ struct usb_kbd
 
     spinlock_t leds_lock;
     bool led_urb_submitted;
+
+    struct work_struct work;  // Workqueue structure
 };
 
-static void kbd_leds_off(struct urb *urb)
+static void kbd_leds_off(struct usb_kbd *kbd)
 {
-
-    struct usb_kbd *kbd = urb->context;
 
     unsigned long flags;
     spin_lock_irqsave(&kbd->leds_lock, flags);
@@ -120,10 +127,8 @@ static void kbd_leds_off(struct urb *urb)
     spin_unlock_irqrestore(&kbd->leds_lock, flags);
 }
 
-static void kbd_leds_on(struct urb *urb)
+static void kbd_leds_on(struct usb_kbd *kbd)
 {
-
-    struct usb_kbd *kbd = urb->context;
 
     unsigned long flags;
     spin_lock_irqsave(&kbd->leds_lock, flags);
@@ -142,6 +147,20 @@ static void kbd_leds_on(struct urb *urb)
     spin_unlock_irqrestore(&kbd->leds_lock, flags);
 }
 
+// Define the work handler function that can sleep
+static void usb_kbd_work(struct work_struct *work)
+{
+    struct usb_kbd *kbd = container_of(work, struct usb_kbd, work);
+
+    kbd_leds_on(kbd);
+    // Perform any necessary processing here
+    msleep(30); // Safe to use msleep here, as we're in non-atomic context
+
+    // Additional processing
+
+    kbd_leds_off(kbd);
+}
+
 static void usb_kbd_irq(struct urb *urb)
 {
 
@@ -149,7 +168,7 @@ static void usb_kbd_irq(struct urb *urb)
     struct usb_kbd *kbd = urb->context;
     int i;
 
-    kbd_leds_on(urb);
+    schedule_work(&kbd->work);
 
     switch (urb->status)
     {
@@ -362,6 +381,11 @@ static int usb_kbd_probe(struct usb_interface *iface,
     if (usb_kbd_alloc_mem(dev, kbd))
         goto fail2;
 
+    // Initialize the workqueue
+    INIT_WORK(&kbd->work, usb_kbd_work);
+
+    // Other initialization code
+
     kbd->usbdev = dev;
     kbd->dev = input_dev;
     spin_lock_init(&kbd->leds_lock);
@@ -447,6 +471,10 @@ static void usb_kbd_disconnect(struct usb_interface *intf)
     usb_set_intfdata(intf, NULL);
     if (kbd)
     {
+        // Cancel any pending work
+        cancel_work_sync(&kbd->work);
+
+        // Free resources
         usb_kill_urb(kbd->irq);
         input_unregister_device(kbd->dev);
         usb_kill_urb(kbd->led);
