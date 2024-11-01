@@ -5,7 +5,7 @@
   <p><h3 align="center">USB HID Boot Protocol keyboard driver with LED Flashing on Key Press 🚀</h3></p>
 </div>
 
-[Forked from Linux Kernel Driver](https://github.com/torvalds/linux/blob/master/drivers/hid/usbhid/usbkbd.c)
+[Forked from Linux Kernel](https://github.com/torvalds/linux/blob/master/drivers/hid/usbhid/usbkbd.c)
 &nbsp;&nbsp;•&nbsp;&nbsp;
 
 
@@ -17,7 +17,7 @@
 
 </div>
 
-## Tested on 6.8.0-48-generic
+## Tested on Ubuntu 24.04 - 6.8.0-48-generic
 
 ## Make
 
@@ -25,17 +25,11 @@
 make
 ```
 
-## Insert
+## Replace Module
 
 ```bash
+sudo rmmod usbhid
 sudo insmod usbkbd.ko
-```
-
-## Bind
-
-```bash
-sudo echo -n "3-1:1.0"> /sys/bus/usb/drivers/usbhid/unbind
-sudo echo -n "3-1:1.0"> /sys/bus/usb/drivers/usbkbd/bind
 ```
 
 ## 🤝🏻 &nbsp;Connect with Me
