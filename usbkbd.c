@@ -105,7 +105,7 @@ struct usb_kbd
     spinlock_t leds_lock;
     bool led_urb_submitted;
 
-    struct work_struct work;  // Workqueue structure
+    struct work_struct usb_kbd_flash_work;  // Workqueue structure
 };
 
 static void kbd_leds_off(struct usb_kbd *kbd)
@@ -120,7 +120,7 @@ static void kbd_leds_off(struct usb_kbd *kbd)
     *(kbd->leds) = kbd->newleds;
     kbd->led->dev = kbd->usbdev;
     if (usb_submit_urb(kbd->led, GFP_ATOMIC))
-        pr_err("usb_submit_urb(leds) failed\n");
+        pr_err("usb_submit_urb(leds) flash off failed\n");
     else
         kbd->led_urb_submitted = true;
 
@@ -140,7 +140,7 @@ static void kbd_leds_on(struct usb_kbd *kbd)
     *(kbd->leds) = kbd->newleds;
     kbd->led->dev = kbd->usbdev;
     if (usb_submit_urb(kbd->led, GFP_ATOMIC))
-        pr_err("usb_submit_urb(leds) failed\n");
+        pr_err("usb_submit_urb(leds) flash on failed\n");
     else
         kbd->led_urb_submitted = true;
 
@@ -148,27 +148,26 @@ static void kbd_leds_on(struct usb_kbd *kbd)
 }
 
 // Define the work handler function that can sleep
-static void usb_kbd_work(struct work_struct *work)
+static void usb_kbd_flash_worker(struct work_struct *usb_kbd_flash_work)
 {
-    struct usb_kbd *kbd = container_of(work, struct usb_kbd, work);
+    struct usb_kbd *kbd = container_of(usb_kbd_flash_work, struct usb_kbd, usb_kbd_flash_work);
 
     kbd_leds_on(kbd);
     // Perform any necessary processing here
     msleep(30); // Safe to use msleep here, as we're in non-atomic context
 
     // Additional processing
-
     kbd_leds_off(kbd);
 }
 
 static void usb_kbd_irq(struct urb *urb)
 {
 
-    pr_info(KBUILD_MODNAME ": " DRIVER_DESC " usb_kbd_irq\n");
+    // pr_info(KBUILD_MODNAME ": " DRIVER_DESC " usb_kbd_irq\n");
     struct usb_kbd *kbd = urb->context;
     int i;
 
-    schedule_work(&kbd->work);
+    schedule_work(&kbd->usb_kbd_flash_work);
 
     switch (urb->status)
     {
@@ -227,12 +226,12 @@ static int usb_kbd_event(struct input_dev *dev, unsigned int type,
 {
     unsigned long flags;
     struct usb_kbd *kbd = input_get_drvdata(dev);
-    pr_info(KBUILD_MODNAME ": " DRIVER_DESC " usb_kbd_event\n");
+    // pr_info(KBUILD_MODNAME ": " DRIVER_DESC " usb_kbd_event\n");
 
     if (type != EV_LED)
         return -1;
 
-    pr_info(KBUILD_MODNAME ": " DRIVER_DESC " EV_LED\n");
+    // pr_info(KBUILD_MODNAME ": " DRIVER_DESC " EV_LED\n");
 
     spin_lock_irqsave(&kbd->leds_lock, flags);
 
@@ -275,7 +274,7 @@ static int usb_kbd_event(struct input_dev *dev, unsigned int type,
 static void usb_kbd_led(struct urb *urb)
 {
 
-    pr_info(KBUILD_MODNAME ": " DRIVER_DESC " usb_kbd_led\n");
+    // pr_info(KBUILD_MODNAME ": " DRIVER_DESC " usb_kbd_led\n");
 
     unsigned long flags;
     struct usb_kbd *kbd = urb->context;
@@ -351,7 +350,7 @@ static int usb_kbd_probe(struct usb_interface *iface,
                          const struct usb_device_id *id)
 {
 
-    pr_info(KBUILD_MODNAME ": " DRIVER_DESC " usb_kbd_probe\n");
+    // pr_info(KBUILD_MODNAME ": " DRIVER_DESC " usb_kbd_probe\n");
 
     struct usb_device *dev = interface_to_usbdev(iface);
     struct usb_host_interface *interface;
@@ -382,7 +381,7 @@ static int usb_kbd_probe(struct usb_interface *iface,
         goto fail2;
 
     // Initialize the workqueue
-    INIT_WORK(&kbd->work, usb_kbd_work);
+    INIT_WORK(&kbd->usb_kbd_flash_work, usb_kbd_flash_worker);
 
     // Other initialization code
 
@@ -472,7 +471,7 @@ static void usb_kbd_disconnect(struct usb_interface *intf)
     if (kbd)
     {
         // Cancel any pending work
-        cancel_work_sync(&kbd->work);
+        cancel_work_sync(&kbd->usb_kbd_flash_work);
 
         // Free resources
         usb_kill_urb(kbd->irq);
