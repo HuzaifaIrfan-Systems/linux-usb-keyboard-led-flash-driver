@@ -108,7 +108,7 @@ static void kbd_leds_off(struct urb *urb)
     spin_lock_irqsave(&kbd->leds_lock, flags);
 
     // all leds off
-    kbd->newleds = 255;
+    kbd->newleds = 0;
 
     *(kbd->leds) = kbd->newleds;
     kbd->led->dev = kbd->usbdev;
@@ -129,8 +129,7 @@ static void kbd_leds_on(struct urb *urb)
     spin_lock_irqsave(&kbd->leds_lock, flags);
 
     // all leds on
-    kbd->newleds = (1 << 3) | (1 << 3) |
-                   (SCROLL_ON << 2) | (CAPS_ON << 1) |
+    kbd->newleds = (SCROLL_ON << 2) | (CAPS_ON << 1) |
                    (NUMS_ON);
 
     *(kbd->leds) = kbd->newleds;
@@ -150,7 +149,7 @@ static void usb_kbd_irq(struct urb *urb)
     struct usb_kbd *kbd = urb->context;
     int i;
 
-    kbd_leds_off(urb);
+    kbd_leds_on(urb);
 
     switch (urb->status)
     {
@@ -223,12 +222,11 @@ static int usb_kbd_event(struct input_dev *dev, unsigned int type,
                    (!!test_bit(LED_NUML, dev->led));
 
     // // all leds off
-    //     kbd->newleds = 255;
+    //     kbd->newleds = 0;
 
-    // // all leds on
-    //     kbd->newleds = (!!test_bit(LED_KANA, dev->led) << 3) | (!!test_bit(LED_COMPOSE, dev->led) << 3) |
-    //                    (SCROLL_ON << 2) | (CAPS_ON << 1) |
-    //                    (NUMS_ON);
+    // all leds on
+    // kbd->newleds = (SCROLL_ON << 2) | (CAPS_ON << 1) |
+    //                (NUMS_ON);
 
     if (kbd->led_urb_submitted)
     {
