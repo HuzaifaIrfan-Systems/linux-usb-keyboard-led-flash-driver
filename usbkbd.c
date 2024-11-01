@@ -14,10 +14,6 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
-#define NUMS_ON 1
-#define CAPS_ON 1
-#define SCROLL_ON 1
-
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/module.h>
@@ -26,20 +22,20 @@
 #include <linux/hid.h>
 
 #include <linux/delay.h>
-
-#include <linux/sched.h>
-#include <linux/jiffies.h>
-
 #include <linux/workqueue.h>
+#define NUMS_ON 1
+#define CAPS_ON 1
+#define SCROLL_ON 1
 
 /*
  * Version Information
  */
 #define DRIVER_VERSION ""
 #define DRIVER_AUTHOR "Vojtech Pavlik <vojtech@ucw.cz>"
-#define DRIVER_DESC "USB HID Boot Protocol keyboard driver"
+#define DRIVER_DESC "USB HID Boot Protocol keyboard driver with LED Flashing on Key Press"
 
 MODULE_AUTHOR(DRIVER_AUTHOR);
+MODULE_AUTHOR("Huzaifa Irfan <contact@huzaifairfan.com>");
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");
 
@@ -105,11 +101,12 @@ struct usb_kbd
     spinlock_t leds_lock;
     bool led_urb_submitted;
 
-    struct work_struct usb_kbd_flash_work;  // Workqueue structure
+    struct work_struct usb_kbd_flash_work; // Workqueue structure
 };
 
 static void kbd_leds_off(struct usb_kbd *kbd)
 {
+    // pr_info("kbd_leds_off\n");
 
     unsigned long flags;
     spin_lock_irqsave(&kbd->leds_lock, flags);
@@ -129,6 +126,7 @@ static void kbd_leds_off(struct usb_kbd *kbd)
 
 static void kbd_leds_on(struct usb_kbd *kbd)
 {
+    // pr_info("kbd_leds_on\n");
 
     unsigned long flags;
     spin_lock_irqsave(&kbd->leds_lock, flags);
@@ -162,8 +160,6 @@ static void usb_kbd_flash_worker(struct work_struct *usb_kbd_flash_work)
 
 static void usb_kbd_irq(struct urb *urb)
 {
-
-    // pr_info(KBUILD_MODNAME ": " DRIVER_DESC " usb_kbd_irq\n");
     struct usb_kbd *kbd = urb->context;
     int i;
 
@@ -226,25 +222,14 @@ static int usb_kbd_event(struct input_dev *dev, unsigned int type,
 {
     unsigned long flags;
     struct usb_kbd *kbd = input_get_drvdata(dev);
-    // pr_info(KBUILD_MODNAME ": " DRIVER_DESC " usb_kbd_event\n");
 
     if (type != EV_LED)
         return -1;
 
-    // pr_info(KBUILD_MODNAME ": " DRIVER_DESC " EV_LED\n");
-
     spin_lock_irqsave(&kbd->leds_lock, flags);
-
     kbd->newleds = (!!test_bit(LED_KANA, dev->led) << 3) | (!!test_bit(LED_COMPOSE, dev->led) << 3) |
                    (!!test_bit(LED_SCROLLL, dev->led) << 2) | (!!test_bit(LED_CAPSL, dev->led) << 1) |
                    (!!test_bit(LED_NUML, dev->led));
-
-    // // all leds off
-    //     kbd->newleds = 0;
-
-    // all leds on
-    // kbd->newleds = (SCROLL_ON << 2) | (CAPS_ON << 1) |
-    //                (NUMS_ON);
 
     if (kbd->led_urb_submitted)
     {
@@ -273,9 +258,6 @@ static int usb_kbd_event(struct input_dev *dev, unsigned int type,
 
 static void usb_kbd_led(struct urb *urb)
 {
-
-    // pr_info(KBUILD_MODNAME ": " DRIVER_DESC " usb_kbd_led\n");
-
     unsigned long flags;
     struct usb_kbd *kbd = urb->context;
 
@@ -349,9 +331,6 @@ static void usb_kbd_free_mem(struct usb_device *dev, struct usb_kbd *kbd)
 static int usb_kbd_probe(struct usb_interface *iface,
                          const struct usb_device_id *id)
 {
-
-    // pr_info(KBUILD_MODNAME ": " DRIVER_DESC " usb_kbd_probe\n");
-
     struct usb_device *dev = interface_to_usbdev(iface);
     struct usb_host_interface *interface;
     struct usb_endpoint_descriptor *endpoint;
@@ -382,7 +361,6 @@ static int usb_kbd_probe(struct usb_interface *iface,
 
     // Initialize the workqueue
     INIT_WORK(&kbd->usb_kbd_flash_work, usb_kbd_flash_worker);
-
     // Other initialization code
 
     kbd->usbdev = dev;
@@ -470,10 +448,11 @@ static void usb_kbd_disconnect(struct usb_interface *intf)
     usb_set_intfdata(intf, NULL);
     if (kbd)
     {
+
         // Cancel any pending work
         cancel_work_sync(&kbd->usb_kbd_flash_work);
-
         // Free resources
+
         usb_kill_urb(kbd->irq);
         input_unregister_device(kbd->dev);
         usb_kill_urb(kbd->led);

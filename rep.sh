@@ -1,3 +1,3 @@
 #! /bin/bash
-sudo rmmod usbkbd
+sudo rmmod usbhid
 sudo insmod usbkbd.ko
