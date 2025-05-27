@@ -1,0 +1,11 @@
+[Unit]
+Description=replace usbhid to usbkbd on startup
+
+[Service]
+WorkingDirectory=/root/
+ExecStart=/root/replace_usbkbd.sh
+User=root
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

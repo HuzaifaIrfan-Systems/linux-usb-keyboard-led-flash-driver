@@ -17,7 +17,7 @@
 
 </div>
 
-## Tested on Ubuntu 24.04 - 6.8.0-48-generic
+## Tested on Ubuntu 24.04 - 6.11.0-26-generic
 
 ## Make
 
@@ -30,6 +30,14 @@ make
 ```bash
 sudo rmmod usbhid
 sudo insmod usbkbd.ko
+sudo modprobe /lib/modules/$(uname -r)/kernel/drivers/hid/usbhid/usbhid.ko.zst
+```
+
+## Create Startup service
+
+```bash
+sudo chmod 777 create_service.sh replace_usbkbd.sh
+./create_service.sh
 ```
 
 ## 🤝🏻 &nbsp;Connect with Me
