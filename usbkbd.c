@@ -117,9 +117,13 @@ static void kbd_leds_off(struct usb_kbd *kbd)
     *(kbd->leds) = kbd->newleds;
     kbd->led->dev = kbd->usbdev;
     if (usb_submit_urb(kbd->led, GFP_ATOMIC))
-        pr_err("usb_submit_urb(leds) flash off failed\n");
+    {
+        // pr_err("usb_submit_urb(leds) flash off failed\n");
+    }
     else
+    {
         kbd->led_urb_submitted = true;
+    }
 
     spin_unlock_irqrestore(&kbd->leds_lock, flags);
 }
@@ -138,9 +142,13 @@ static void kbd_leds_on(struct usb_kbd *kbd)
     *(kbd->leds) = kbd->newleds;
     kbd->led->dev = kbd->usbdev;
     if (usb_submit_urb(kbd->led, GFP_ATOMIC))
-        pr_err("usb_submit_urb(leds) flash on failed\n");
+    {
+        // pr_err("usb_submit_urb(leds) flash on failed\n");
+    }
     else
+    {
         kbd->led_urb_submitted = true;
+    }
 
     spin_unlock_irqrestore(&kbd->leds_lock, flags);
 }
