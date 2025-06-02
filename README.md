@@ -1,8 +1,8 @@
 <br />
 
 <div align="center">
-  <h1>USB Keyboard Flasher Driver</h1>
-  <p><h3 align="center">USB HID Boot Protocol keyboard driver with LED Flashing on Key Press 🚀</h3></p>
+  <h1>Linux Kernel Module for USB Keyboard</h1>
+  <p><h3 align="center">USB HID Boot Protocol keyboard Module to Flash Leds on Keypress 🚀</h3></p>
 </div>
 
 [Original usbkbd.c](https://github.com/torvalds/linux/blob/master/drivers/hid/usbhid/usbkbd.c)
@@ -55,4 +55,4 @@ sudo chmod 777 create_service.sh replace_usbkbd.sh
 
 ## License
 
-Licensed under the GPL License, Copyright 2024 Huzaifa Irfan. [LICENSE](LICENSE)
+Licensed under the GPL License, Copyright 2025 Huzaifa Irfan. [LICENSE](LICENSE)
