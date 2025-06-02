@@ -52,5 +52,7 @@ Mkfile.old
 dkms.conf
 
 *.iso
+!mount.iso
 setup/
+mount/
 .ash_history
