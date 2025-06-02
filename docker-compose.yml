@@ -1,0 +1,11 @@
+
+services:
+  module-builder:
+    container_name: module-builder
+    build:
+      context: .
+      dockerfile: dockerfile
+    image: module-builder
+    command: sh -c "while true; do sleep 30; done"
+    volumes:
+      - .:/build
