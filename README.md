@@ -53,3 +53,5 @@ sudo chmod 777 create_service.sh replace_usbkbd.sh
 # 📜 License
 
 Licensed under the GPL3 License, Copyright 2025 Huzaifa Irfan. [LICENSE](LICENSE)
+
+Last Updated on 2024-11-01
