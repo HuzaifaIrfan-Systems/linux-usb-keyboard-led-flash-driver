@@ -13,6 +13,12 @@
 
 ## Tested on Ubuntu 24.04 - 6.11.0-26-generic
 
+## Install Build Tools
+
+```bash
+sudo apt install gcc make
+```
+
 ## Make
 
 ```bash
